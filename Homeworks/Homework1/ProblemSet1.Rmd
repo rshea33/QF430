@@ -1,0 +1,452 @@
+---
+title: "Problem Set 1"
+author: "Ryan Shea"
+date: "9/22/2022"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+I pledge my honor that I have abided by the Stevens Honor System.
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage
+
+
+```{r libraries, echo = FALSE, include = FALSE}
+# libraries used
+library(readr)
+library(readxl)
+library(zoo)
+```
+
+# 1: Introduction
+
+
+## 1.1
+
+The price of gold is currently \$1,675 per ounce. Forward contracts are available to buy or sell gold at \$1,750 per ounce for delivery in one year. An arbitrageur can borrow or invest money at 4% per annum. What should the arbitrageur do? Assume that the cost of storing gold is zero and that gold provides no income.
+
+
+```{r 1.1}
+S_0 <- 1675
+F_0 <- 1750
+r <- 0.04
+
+money_market <- S_0 * (1 + r) # 1,742
+F_0 - money_market # Diff
+```
+The best option is to short the forward contract and borrow money to buy the same amount of gold as the forward contract specifies today. This guarantees a profit of \$8 per ounce.
+
+\newpage
+
+## 1.2
+
+The current price of a stock is \$50. Three-month call options with a strike price of \$54 currently sell for \$8. An investor with \$20,000 to invest is considering the following three investment strategies:
+
+
+(a) Investing all his money in the stock
+(b) Doubling the amount to invest by taking a loan of \$20,000 at an interest rate of 1% over three months, investing the resulting \$40,000 in the stock and then repaying \$20,200 on the loan
+(c) Investing all his money in the call options
+
+Determine the return of the investor (defined as change in wealth / initial wealth) under each of the three strategies for the following two scenarios: 1) stock price falls to \$40 after three months, 2) stock price rises to \$70 after three months. Compare the risks and returns of the three strategies.
+
+```{r 1.2}
+S_0 <- 50
+S_T1 <- 40
+S_T2 <- 70
+
+K <- 54
+V_0 <- 8
+P_0 <- 20000 # Portfolio
+
+# A (labeled as strategy_scenario, all in stocks)
+num_stocks_a <- P_0 / S_0 # 400
+
+a_1 <- ((S_T1 * num_stocks_a) - (S_0 * num_stocks_a)) / (S_0 * num_stocks_a) # -0.2
+(a_1 * P_0) / P_0
+a_2 <- ((S_T2 * num_stocks_a) - (S_0 * num_stocks_a)) / (S_0 * num_stocks_a) # 0.4
+(a_2 * P_0) / P_0
+
+
+# B (leverage)
+initial <- 2 * P_0
+num_stocks_b <- initial / S_0
+
+b_1 <- ((S_T1 * num_stocks_b) - (S_0 * num_stocks_b)) / (S_0 * num_stocks_b)
+(b_1 * initial - 200) / P_0
+
+b_2 <- ((S_T2 * num_stocks_b) - (S_0 * num_stocks_b)) / (S_0 * num_stocks_b)
+(b_2 * initial - 200) / P_0
+
+
+# C (Call options)
+num_calls <- P_0 / V_0 # 2500 calls, equal to 250 contracts
+
+V_T1 <- S_T1 - K # negative number, must be set to 0
+V_T1 <- 0
+
+c_1 <- V_T1 * num_calls
+(c_1 - P_0) / P_0
+
+V_T2 <- S_T2 - K # 16
+
+c_2 <- V_T2 * num_calls
+(c_2 - P_0) / P_0
+```
+
+You can see that the options have the most volatility out of the three options, where you either double your money or lose all of it. Using nothing but stocks is the least risky while if you take on leverage it roughly doubles the vol.
+
+\newpage
+
+## 1.3
+
+The economic growth next year will be low, medium, or high. There are four assets, A, B, C, and D, whose value (cash flow) in the three states will be as follows:
+
+|      |  Low Growth  |  Medium Growth |   High Growth
+|  --- |  ----------  |  ------------- |   ----------
+|   A  |   30         |     50         |     80 
+|   B  |   20         |     40         |     40
+|   C  |   30         |     60         |     80
+|   D  |   30         |     40         |     50
+
+The prices of the assets A, B, and C, are 49.90, 34.20, and 55.30, respectively.
+
+(a) What are the state prices of the three states (high growth, medium growth, and low growth)?
+
+$$49.90 = 30L + 50M + 80H$$
+$$34.20 = 20L + 40M + 40H$$
+$$55.30 = 30L + 60M + 80H$$
+
+First subtract the first equation from the third equation gives us this:
+$$5.40 = 10M$$
+$$\implies M = 0.54$$
+Next, we will subtract two times the second equation from the first equation and substitute 0.54 for M:
+
+$$18.50 = 10L + 30(0.54)$$
+$$2.3 = 10L \implies L = 0.23$$
+Finally we wil plug in M and L into the third equation in order to find H.
+$$55.30 = 30(0.23) + 60(0.58) + 80H$$
+$$55.30 - 30(0.23) - 60(0.58) = 80H$$
+$$13.6 = 80H \implies H = 0.17$$
+$$\pi_H = 0.17, \pi_M = 0.54, \pi_L = 0.23$$
+
+(b) What is the risk-free rate?
+
+I will consider a bond that arbitrarily pays out \$100 regardless of the state price.
+
+$$(0.2 * 100) + (0.58 * 100) + (0.15 * 100) = 93$$
+$$\implies \frac{100 - 93}{93} \approx 7.53\%$$
+
+
+(c) What is the price of asset D?
+
+$$V_D = 30(0.15) + 40(0.58) + 50(0.2)$$
+$$\implies V_D = 37.70$$
+
+
+
+\newpage
+
+## 1.4
+
+Consider a fixed time T in future. Let S be the price of a stock at time T in \$. For positive integer n, let cn be the price of a binary call option that will pay \$1 at time T (if S is greater than or equal to n and 0 if S is less than n.) Similarly, let $p_n$ be the price of a binary put option that will pay \$1 at time T if S is less than n and 0 if S is greater than or equal to n. Suppose these prices are available for all positive integral values of n. That is, c1, p1, c2, p2, c3, p3, . . . are available.
+
+(a) Write an expression for the state price for the state that S lies between n and n + 1 (n less than or equal to S is less than n + 1) using binary call prices. Recall, this is the price of a portfolio created using binary call options that pays \$1 if n is less than or equal to S is less than n + 1 and 0 otherwise. Hint: Buy and/or sell different calls to create a portfolio with the required payoff. The payoff from selling an option is the exact opposite of the payoff from buying the option.
+
+The portfolio with the required payoff would be buying the call that pays \$1 when n is less than or equal to S and 0 otherwise and selling a call that pays \$ when S is greater than or equal to n+1 and 0 otherwise. The state price is $c_n - c_{n+1}$.
+
+(b) Write an expression for the state price for the state that S lies between n and n + 1 (n is less than or equal to S is less than n + 1) using binary put prices.
+
+You could do the same idea: buy a put that pays off \$1 when S < n+1 and sell one that pays off \$1 when S < n. This state price would be $p_{n+1} - p_n$.
+
+(c) Equating the two expressions you calculated for the same state price, determine a relation between binary call prices and binary put prices.
+
+$$c_n - c_{n+1} = p_{n+1} - p_n$$
+$$\implies c_n + p_n = c_{n+1} + p_{n+1}$$
+
+This is saying that these two portfolios are equal because no matter what $S$ is, the payoff will always be \$1. 
+
+\newpage
+
+# 2: Futures Markets
+
+## 2.1
+
+What is open interest in a derivative contract? Why does the open interest usually decline during the month preceding the delivery month? Suppose 1,000 contracts in a futures market are traded on a given day. Of the 1,000 long positions taken, 400 closed short existing positions, while 600 opened new long positions. Of the 1,000 short positions taken, 700 closed existing long positions and 300 opened new short positions, What is the change in the open interest on this day?
+
+
+Open interest in a derivative contract is where the total number of contracts outstanding is equal for long in short positions. In other words, the amount of buy orders is equal to the amount of sell orders.
+
+Open interest will decline the month before delivery because there are going to be far more trying to sell as opposed to buy in order to avoid delivery of the asset because it can be costly.
+
+```{r 2.1}
+long <- 1000
+short <- 1000
+
+long <- long - 300      + 600 
+#              cl.short   op.long
+short <- short - 400     + 700
+#                cl.long   op.short
+
+long
+short
+```
+
+The open interest increased by 300.
+
+\newpage
+
+## 2.2
+A company has a long position in futures contract to buy 5,000 bushels of wheat. The company had entered into the contract when the futures price was 1,094 cents per bushel. The initial margin is \$4,500 and the maintenance margin is \$3,300. The current futures price is 859 cents per bushel and the margin account balance is \$3,700.
+
+(a) Determine the net margin deposits to or margin withdrawals from the margin account so far.
+
+```{r 2.2a}
+bushels <- 5000
+F_0 <- 10.94 * bushels # 54,700
+
+init_margin <- 4500
+main_margin <- 3300
+F_t <- 8.59 * bushels # 42,950
+cur_margin <- 3700
+
+total_pnl <- F_t - F_0
+total_pnl # This is not net margin deposits/withdrawls
+
+# Since it lost money over time it means there have been several margin calls leading to deposits
+diff_init_main <- init_margin - main_margin # amount of loss to each margin call
+diff_init_main
+
+init_margin - cur_margin
+
+net_deposits_withdrawls <- total_pnl + 800 - init_margin
+net_deposits_withdrawls
+```
+
+(b) What price change would lead to a margin call?
+
+```{r 2.2b}
+cur_margin - main_margin
+# Drop of $300 would create a margin call
+300 / 5000
+```
+There will be a margin call if it drops another 6 cents per bushel.
+
+(c) Following what price change can \$1,000 be withdrawn from the margin account?
+
+```{r 2.2c}
+init_margin + 1000 - cur_margin
+# Increase of 1800 would allow $1k to be withdrawn
+1800 / 5000
+```
+36 cents per bushel would allow them to withdraw \$1,000.
+
+\newpage
+
+## 2.3
+This problem illustrates the issues faced in setting margin requirements. Use the daily closing prices for crude oil futures contract in dollars per barrel from the given spreadsheet (obtained from Professor Hull’s website). You will need to use a spreadsheet or another calculation software for this problem.
+
+(a) Assuming that daily price changes are normally distributed and independent across time, estimate the standard deviation of two-day price changes. To do this, calculate daily price changes, estimate their standard deviation, and then multiply by the square root of two for the standard deviation of two-day price changes. For the purpose of calculating standard deviation, you may assume the mean of the normal distribution to be zero or estimate it using the data.
+
+```{r 2.3a}
+data <- read_excel("Crude Oil Data-2.xlsx")
+n <- nrow(data)
+ret <- (data$`Crude Oil`[2:n] - data$`Crude Oil`[1:(n - 1)])
+
+std_2 <- sd(ret) * sqrt(2) # 2 day change
+std_2
+```
+
+(b) Assume two-day price changes are normal. What maintenance margin should an ex- change set for a member with a long position in one contract such that with 99% probability, the decline in contract value over a two-day period will not exceed the maintenance margin? That is, determine maintenance margin such that the decline in the contract value over a two-day period will exceed the maintenance margin with 1% probability. Each contract is on 1,000 barrels of oil. Use the normal distribution with mean and standard deviation you estimated for two-day price changes to find the 1 percentile fall in price over two days. The Excel function norm.inv can be used for this. Scale the price change by contract size to find the corresponding fall in contract value.
+
+```{r 2.3b}
+m_2 <- mean(ret) * 2
+m_2 
+std_2
+
+z_1 <- -2.3263 # Z-score of first percentile for normal distribution
+
+m_margin <- 1000 * (m_2  + std_2 * z_1) # assuming the mean is not 0, estimated from the data
+m_margin
+```
+The maintenance margin should be set at \$5157.29.
+
+
+(c) In the given data, what percentage of the days does the decline in contract value over a two-day period actually exceed the maintenance margin? What do your results suggest about the appropriateness of the normal distribution assumption?
+
+```{r 2.3c}
+total <- rollapply(ret, 2, sum)
+total <- total * 1000
+
+over <- (total < m_margin) + 0 # Vector of when it goes over maintenance margin (1 if true, 0 if false)
+
+sum(over) / length(over)
+
+```
+
+The 1% interval actually happens approximately 2.31% of the time. This could be because of two different reasons. First, normal distributions assuming that the data points are independent when they really are not. If there is a big drop in price there could be pressure to sell, dropping it even more the next day. This implies that it is not independent. Also, returns on stocks and futures tend to have a larger kurtosis than a normal distribution (for SPY, around 4-5 as opposed to 3) which means it has fatter tails on each side which could also be a reason.
+
+
+(d) In practice, margin balance usually exceeds maintenance margin because margin calls restore the margin balance to the initial margin. Assume that the initial margin is set such that the maintenance margin calculated above equals 75% of the initial margin. Track margin balance assuming that (1) the margin balance starts at the initial balance, (2) a margin call is made on any day the margin balance drops below the maintenance margin, and (3) whenever margin balance rises above the initial margin, the excess is withdrawn the same day by the client so that margin balance at the end of the day never exceeds the initial margin.
+Determine the percentage of times that the client has an incentive to default (that is the number of two-day periods over which the margin balance becomes negative if the client does not meet margin calls). Assume that if a margin call is not met one day, margin withdrawal cannot be made the next day. One way to do this is as following. First calculate true daily changes in contract value, true withdrawals, true deposits, and true margin balance under assumptions (1)-(3) above, ignoring any defaults. Then calculate the default balance on a day assuming true margin balance two days ago, no margin deposit that day and the previous day and no margin withdrawal that day. This can also be calculated as: default balance on day n equals the true balance on day n minus true margin deposits on days n - 1 and n plus true margin withdrawal on day n. There is incentive to default if this default balance is negative. See the spreadsheet with an example.
+
+```{r 2.3d}
+m_margin <- abs(m_margin)
+
+i_margin <- (m_margin / 75) * 100
+i_margin
+daily <- ret * 1000
+
+margin_account <- c(i_margin)
+value <- i_margin
+n_margin_calls <- 0
+for (i in 1:length(daily)) {
+  value <- value + daily[i]
+  if (value >= i_margin){value <- i_margin} # Withdraw
+  if (value <= m_margin){
+    value <- i_margin
+    n_margin_calls <- n_margin_calls + 1
+  }
+}
+n_margin_calls
+n_margin_calls / length(daily)
+
+
+# If they do not withdraw
+margin_account <- c(i_margin)
+value <- i_margin
+n_margin_calls <- 0
+for (i in 1:length(daily)) {
+  value <- value + daily[i]
+  if (value <= m_margin){
+    value <- i_margin
+    n_margin_calls <- n_margin_calls + 1
+  }
+}
+n_margin_calls
+n_margin_calls / length(daily)
+```
+
+You can see that if they do not withdraw margin calls almost never happen, but if they take out money whenever it goes over the initial margin it is much more common.
+
+\newpage
+
+# 3: Hedging With Futures
+
+## 3.1
+
+It is now September 2022. A company anticipates that it will purchase 1 million pounds of copper in each of December 2022, June 2023, December 2023, and June 2024. The company has decided to use the futures contracts traded by the CME Group to hedge its risk. Contracts with maturity in January 2023, July 2023, January 2024, and July 2024 are available. One contract is for the delivery of 25,000 pounds of copper. The initial margin is \$6,050 per contract and the maintenance margin is \$5,500 per contract. The company’s policy is to hedge 80% of its exposure. Contracts with maturities up to 13 months into the future are considered to have sufficient liquidity to meet the company’s needs.
+
+(a) Devise a hedging strategy for the company. That is, specify the company’s futures trades for hedging. Do not make the adjustment for daily settlement (tailing the hedge) described in the textbook.
+
+They have to hedge 800,000 pounds of copper.
+800,000 / 25,000 = 32 contracts
+
+Sep 22:
+
+ - Long 16 Jan 23 Futures (353.8)
+ 
+ - Long 16 Jul 23 Futures (350.1)
+
+Dec 22:
+
+ - Close 16 Jan 23 Futures (351.1-353.8 = -2.7)
+ 
+ - Long 16 Jan 24 Futures(348.0)
+ 
+Jun 23:
+
+ - Close 16 Jul 23 (344.4-350.1 = -5.7)
+ 
+ - Long 16 Jul 24 (345.1)
+
+Dec 23:
+
+ - Close 16 Jan 24 (348.2-348.0 = 0.2)
+ 
+ - Long 16 Jul 24 (350.9)
+ 
+Jun 24:
+
+ - Close 16 Jul 24 (350.9-345.1 = 5.8)
+ 
+ - Close 16 Jul 24 (350.9-349.1 = 1.8)
+
+(b) Assume that the market prices (in cents per pound) today and at future dates are as in the following table.
+
+(Omitted)
+
+
+What is the impact of the strategy you propose on the price the company pays for copper?
+
+Dec 22:
+
+ - $351 - ((351.1-353.8)*.4 + (347.6 - 350.1)*.4) = 353.08$
+ 
+Jun 23:
+
+ - $344.6 - ((344.4-347.6)*.4 + (344.6-348)*.4) = 347$
+ 
+Dec 23:
+
+ - $347.9 - ((348.2-348.0)*.4 + (349.1-345.1)*.4) = 346.22$
+ 
+Jun 24:
+
+ - $350.7 - ((350.9-349.1)*.4 + (350.9-345.1)*.4) = 347.66$
+
+(c) What is the initial margin requirement in September 2022?
+
+32 contracts * 6050 = \$193,600
+
+(d) Is the company subject to any margin calls? For part, only consider the prices provided, ignoring prices on other days.
+
+Margin calls will occur when the contract goes under 9.090909%, and none of them do over the time period.
+
+
+\newpage
+
+## 3.2
+
+A fund manager wants to hedge her portfolio against market movements over the next two months. The portfolio is worth \$25 million and its CAPM beta is 0.8. The manager plans to use three-month futures contracts on a well-diversified index to hedge its risk. The current level of the index is 3876, one contract is on \$50 times the index, the risk-free rate is 4.2% per annum, and the dividend yield on the index is 1.8% per annum. The current 3-month futures price is 3900.
+
+(a) What position should the fund manager take to eliminate all exposure to the market over the next two months?
+
+```{r}
+P_0 <- 25000000
+I_0 <- 3876
+B <- 0.8
+multiplier <- 50
+r <- 0.042
+F_0 <- 3900
+
+num_contracts <- B * ((P_0) / (I_0 * multiplier))
+num_contracts
+round(num_contracts)
+```
+
+To eliminate market risk, they should short 103 contracts.
+
+
+(b) Calculate the expected gain or loss of the fund manager’s hedged position under four cases: the index value in two months is 3,000, 3,500, 4,500, and 5,000. This will consist of the gain or loss on the futures position and gain or loss on the portfolio. In each case, assume that the one-month futures price after two months is 0.4% higher than the index level at that time. Your portfolio value at that time is not provided for these cases. To calculate the expected value of your portfolio after two months in any case, determine the excess return on market as the percentage increase in the index plus the dividend yield over two months minus the risk-free rate over two months. Multiply the excess return on market with the beta of the portfolio to get the expected excess return on the portfolio. Add risk-free rate over two months to get the expected return on the index over two months. For this problem you can ignore compounding so that, for example, 4.2% per annum is equivalent to 4.2% × 1/12 = 0.35% per month.
+
+```{r 3.2b}
+states <- c(3000, 3500, 4500, 5000)
+
+ev <- 0
+returns <- c()
+
+for (i in 1:4){
+  dum <- 0.8 * (((states[i]- 3876) / 3876) + .018*(2/12) - .042*(2/12))
+  dum
+  returns <- cbind(returns, dum)
+  
+}
+
+returns
+```
+
+

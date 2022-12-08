@@ -1,0 +1,261 @@
+---
+title: "Problem Set 2"
+author: "Ryan Shea"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+I pledge my honor that I have abided by the Stevens Honor System.
+
+\newpage
+
+# 1: Interest Rates
+
+## 1.1
+
+```{r table, echo = FALSE}
+rates <- c(0.04, 0.043, 0.046, 0.049)
+n <- c(0.5, 1.0, 1.5, 2.0)
+kable(rbind(rates, n))
+```
+
+
+### (a)
+
+```{r 1.1a}
+m <- 2
+
+rates <- c(0.04, 0.043, 0.046, 0.049)
+n <- c(0.5, 1.0, 1.5, 2.0)
+
+cont_compound <- function(m, r) {
+  return(m * log(1 + (r/m)))
+}
+cont_rate <- cont_compound(m, rates)
+cont_rate
+```
+
+### (b)
+
+$$ f = \frac{r_2t_2 - r_1t_1}{t_2-t_1} $$
+
+```{r 1.1b}
+df <- data.frame(rbind(rates, n))
+colnames(df) <- c("6mo", "12mo", "18mo", "24mo")
+kable(df)
+
+# 1 = r, 2 = t
+
+fwd_rate <- ((df$`24mo`[1] * df$`24mo`[2]) - (df$`18mo`[1] * df$`18mo`[2])) / (df$`24mo`[2] - df$`18mo`[2])
+fwd_rate
+
+```
+
+### (c)
+
+```{r 1.1c}
+total <- sum(exp(-cont_rate * n))
+total
+
+(1 - exp(-cont_rate[4] * 2)) * 2 / total # cont_rate[4] == 2 years
+```
+
+
+### (d)
+
+```{r 1.1d}
+principal <- 40000000
+r <- 0.061
+F_0 <- 0.059
+
+principal * (r - F_0) * 0.5 * exp(-cont_rate[4] * 2)
+```
+
+\newpage
+
+## 1.2
+
+```{r 1.2 table, echo = FALSE}
+principal <- c(100, 100, 1000, 100)
+ttm <- c(0.5, 1.0, 1.5, 2.0)
+coupon <- c(0.00, 0.00, 0.08, 0.04)
+bond_px <- c(97, 94, 1020, 95)
+
+tab_2 <- data.frame(cbind(principal, ttm, coupon, bond_px))
+kable(tab_2)
+```
+
+### (a)
+
+```{r 1.2a}
+# 97 = 100 * exp(-r*.5)
+# 97 / 100 = exp(-r*.5)
+# ln(97/100) = -r * 0.5
+Z_6mo <- -2 * log(bond_px[1]/principal[1]) # = r
+
+Z_12mo <- -log(bond_px[2]/principal[2])
+
+C_18mo <- principal[3] * (coupon[3] / 2) # Every 6 months, divide by 2
+
+# 1020 = (C_18mo * exp(-Z_6mo * 0.5)) + (C_18mo * exp(-Z_12mo * 1)) + ((principal[3] + C_18mo) * exp(-r * 1.5))
+# (1020 - (C_18mo * exp(-Z_6mo * 0.5)) - (C_18mo * exp(-Z_12mo * 1))) / (principal[3] + C_18mo) =  exp(-r * 1.5))
+# log((1020 - (C_18mo * exp(-Z_6mo * 0.5)) - (C_18mo * exp(-Z_12mo * 1))) / (principal[3] + C_18mo)) = -1.5r
+Z_18mo <- log((1020 - (C_18mo * exp(-Z_6mo * 0.5)) - (C_18mo * exp(-Z_12mo * 1))) / (principal[3] + C_18mo)) / -1.5
+
+C_24mo <- principal[4] * (coupon[4] / 2)
+
+# 95 = (C_24mo * exp(-Z_6mo * 0.5)) + (C_24mo * exp(-Z_12mo * 1)) + (C_24mo * exp(-Z_18mo * 1.5)) + ((principal[4] + C_24mo) * exp(-r * 2))
+# 95 - (C_24mo * exp(-Z_6mo * 0.5)) - (C_24mo * exp(-Z_12mo * 1)) - (C_24mo * exp(-Z_18mo * 1.5)) / ((principal[4] + C_24mo) =  exp(-r * 2))
+# log(95 - (C_24mo * exp(-Z_6mo * 0.5)) - (C_24mo * exp(-Z_12mo * 1)) - (C_24mo * exp(-Z_18mo * 1.5)) / ((principal[4] + C_24mo)) = -2r
+Z_24mo <- log((95 - (C_24mo * exp(-Z_6mo * 0.5)) - (C_24mo * exp(-Z_12mo * 1)) - (C_24mo * exp(-Z_18mo * 1.5))) / (principal[4] + C_24mo)) / -2
+
+Z <- c(Z_6mo, Z_12mo, Z_18mo, Z_24mo)
+Z
+```
+
+### (b)
+
+```{r 1.2b}
+fwd_rates <- c(Z_6mo)
+
+for (i in 1:3) {
+  temp <- Z[i+1] + (Z[i+1] - Z[i]) * (ttm[i] / (ttm[i+1] - ttm[i]))
+  fwd_rates <- append(fwd_rates, temp)
+}
+fwd_rates
+```
+
+### (c)
+
+```{r 1.2c}
+par_6mo <- ((1 - (exp(-Z[1] * 0.5))) * 2) / exp(-Z[1] * 0.5) 
+par_6mo
+par_12mo <- (1 - (exp((-Z[1] * 0.5)*2 * exp(Z[2] * 1)))) / exp(-Z[2])
+par_12mo
+par_18mo <- (1 - (exp((-Z[1] * 0.5)*2 * exp(Z[2] * 1) * exp(Z[3] * 1.5)))) / exp(-Z[3] * 1.5)
+par_18mo
+par_24 <- (1 - (exp((-Z[1] * 0.5)*2 * exp(Z[2] * 1) * exp(Z[3] * 1.5) * exp(Z[4] * 2)))) / exp(-Z[4] * 2)
+par_24
+
+```
+
+### (d)
+
+```{r 1.2d}
+sum(2.5 * exp(-Z * ttm)) + 100 * exp(-Z[4] * 2)
+```
+
+\newpage
+
+# 2: Forward and Futures Prices
+
+## 2.1
+
+```{r 2.1}
+S_0 <- 49
+r <- 0.05
+dividend <- 0.60 # Quarterly
+#next dividend paid after 2 months
+
+(S_0 - dividend * exp(-r * (2/12)) - dividend * exp(-r * (5/12))) * exp(r * 0.5)
+```
+
+## 2.2
+
+```{r 2.2}
+S_0 <- 314
+r <- 0.05
+div <- 0.06
+t <- 0.5
+
+S_0 * exp((r - div) * t)
+```
+
+## 2.3
+
+```{r 2.3}
+r <- 0.05
+div <- 0.07
+
+F_3mo <- 75
+F_6mo <- 74
+
+
+ratio_fut <- F_6mo / F_3mo
+ratio_fut
+
+r2 <- exp((r-div) * 0.5) / exp((r-div) * 0.25)
+r2
+```
+
+Because the futures ratio is lower than it should be it implies that there is a mispricing in the futures position. The best way to take advantage is to short the 3-month contract and long the 6-month contract.
+
+## 2.4
+
+### (a)
+
+Company B--the company with the forward contracts--would be slightly better off. This is because the loss is only realized at the end and they would not have to deal with the daily settlement.
+
+### (b)
+
+Company A--the company with the futures contracts--would be better off this time. Since futures contracts change in value every day/they are exposed to daily settlement, they would be making profits daily as opposed to at the end.
+
+### (c)
+
+Company A would be better off. Since they are making daily profits in the beginning they could take out anything above the initial margin requirement and invest it in the money market. They would make extra money before having to put it back in for margin requirements.
+
+### (d)
+
+Company B would be better off since they would not have to put up extra margin when it first falls and they can keep that money in the money markets. Company A would have to take money out of the money market in order to keep up with the maintenance margin/margin calls.
+
+## 2.5
+
+
+```{r 2.5}
+S_0 <- 1721
+storage <- 3.60 #/oz, payable quarterly
+r <- 0.05
+
+pv_stor <- (storage / 4) * exp(-(r * 0.25)) + (storage / 4) * exp(-(r * 0.5))
+
+F_0 <- (S_0 + pv_stor) * exp(r * 0.5)
+F_0
+```
+
+## 2.6
+
+```{r 2.6}
+exchange_rate <- 1.0207
+F_0 <- 1.0600
+r_usd <- 0.03
+# Find r_chf
+```
+
+$$F_0 = exchange * e^{(r_{USD} - r_{CHF}) * 1}$$
+$$ \implies r_{USD} - r_{CHF} = \ln(\frac{F_0}{exchange}) $$
+
+$$ \implies r_{CHF} = r_{USD} - \ln(\frac{F_0}{exchange}) $$
+```{r 2.6 part2}
+r_usd - log(F_0 / exchange_rate)
+```
+
+## 2.7
+
+```{r 2.7}
+r_uk <- 0.0436
+r_us <- 0.0427
+S_0 <- 1.1439
+F_0 <- 1.1431
+
+real_F_0 <- S_0 * exp((r_us - r_uk) * 0.5)
+real_F_0
+
+real_F_0 - F_0
+```
+
+
+The quoted futures price is undervalued so the arbitrage strategy would be to buy the 6 month futures contract and short the current/spot price.

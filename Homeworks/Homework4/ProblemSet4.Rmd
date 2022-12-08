@@ -1,0 +1,223 @@
+---
+title: "Problem Set 4"
+author: "Ryan Shea"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(knitr)
+```
+
+I pledge my honor that I have abided by the Stevens Honor System.
+
+\newpage
+
+# 1. Securitization
+
+## 1.1
+
+### (a)
+
+If either one defaults, the total cash fell down to \$130,000. If both default, the total cash fell down to \$60,000.
+
+```{r, echo=FALSE}
+tab <- data.frame(c(60000, 130000), c(130000, 140000))
+rownames(tab) <- c("Yash defaults", "Yash does not default")
+colnames(tab) <- c("Zara defaults", "Zara does not default")
+kable(tab)
+```
+
+### (b)
+
+```{r, echo = FALSE}
+tab <- data.frame(c(0, 0), c(0, 60000))
+rownames(tab) <- c("Yash defaults", "Yash does not default")
+colnames(tab) <- c("Zara defaults", "Zara does not default")
+kable(tab)
+```
+
+### (c)
+
+```{r}
+alice_ev <- 0.01 * 60000 + 0.09 * 130000 + 0.09 * 130000 + 0.81 * 140000
+
+bob_ev <- 0.01 * 0 + 0.09 * 0 + 0.09 * 0 + 0.81 * 60000
+
+alice_ev
+bob_ev
+```
+
+\newpage
+
+### (d)
+
+```{r}
+alice_ev <- 0.05 * 60000 + 0.05 * 130000 + 0.05 * 130000 + 0.85 * 140000
+
+bob_ev <- 0.05 * 0 + 0.05 * 0 + 0.05 * 0 + 0.85 * 60000
+
+alice_ev
+bob_ev
+```
+
+### (e)
+
+```{r}
+alice_ev <- 0.1 * 60000 + 0 * 130000 + 0 * 130000 + 0.9 * 140000
+
+bob_ev <- 0.1 * 0 + 0 * 0 + 0.05 * 0 + 0.9 * 60000
+
+alice_ev
+bob_ev
+```
+
+\newpage
+
+## 1.2
+
+### (a)
+
+There are a total of \underline{52,400} loans, with the average principal balance equal to $1,745,303,060.82 / 52,430 = \$33,288.25$. The percentage of assets from car loans is $89.83\% * 4.53\% \approx 4.07%$.
+
+### (b)
+
+The class A-1 notes make up \underline{\$304,740,000} at a rate of \underline{3.633%}. The most junior notes (Class C) make up \underline{\$31,570,000} at a rate of \underline{5.22%}.
+
+### (c)
+
+The underwriters keep a total of \underline{\$2,847,303}.
+
+
+### (d)
+
+They will move down to the interest on Class C notes. 
+
+### (e)
+
+$$304,740,000 * 3.633\% = 11,071,204.20$$
+$$\frac{11,071,204.20 * 24}{360} = 738,080.28$$
+
+### (f)
+
+The servicing fees were paid in full at \$1,454,419.22.
+
+The interest payments (all Class As, Class B and Class C) were all paid in full (\$738,080.28 \$881,259.38 \$373,558.67 \$1,421,016.18 and \$440,889.90). They sum up to \$3,415,244.
+
+
+\newpage
+
+# 2. Options Markets
+
+## 2.1
+
+```{r}
+S_t <- seq(0, 50)
+
+plot_port <- function(s) {
+  shares <- 100 * s
+  
+  sell_60_calls_at_20 <- -60 * max(s - 20, 0)
+  
+  buy_60_puts_at_30 <- 60 * max(30 - s, 0)
+  
+  return (shares + sell_60_calls_at_20 + buy_60_puts_at_30)
+}
+
+value <- cbind(S_t, lapply(S_t, plot_port))
+plot(value, type='l', ylab = "Portfolio Value", xlab = "Stock Price",
+     main = "Value of Portfolio as a Function of Asset Price")
+grid()
+```
+
+\newpage
+
+## 2.2
+
+Because we know that Options C, E and F have positive Deltas we know that they are calls as they move in the same direction as the stock price does. We will look at those first.
+
+C is the cheapest and F is the most expensive, meaning C is most likely the most ITM or has the longest time to expiry. Lower strike price implies a higher cost for the calls as does a longer time to expiration. Options 1 and 3 both expire in 2 days while option 5 expires a week later. Option 3 has a larger strike price than option 1 by \$2.50 so Option 1 should cost about that much more. Option 5 is tied with the most expensive strike price and has the most expensive expiry so it is the most expensive call (F). We already know option 1 is more valuable than option 3, so that means that 1 is E and 3 is C.
+
+As for the puts, higher strike price implies higher cost as does a longer time to expiration. Using the same logic, option 6 should be the most expensive, 4 in the middle and 2 the cheapest. They are B, A, and D, respectively.
+
+```{r, echo=FALSE}
+t <- data.frame(seq(1, 6), c("E", "D", "C", "A", "F", "B"))
+colnames(t) <- c("Option", "Quote")
+kable(t)
+```
+
+
+\newpage
+
+# 3. Option Price Properties
+
+## 3.1
+
+### Call Price + PV of Dividends + PV of Strike = Put Price + Stock Price
+
+```{r}
+lhs <- 14 + (1 * 99/100) + (50 * 98/100)
+rhs <- 2 + 60
+c(lhs, rhs)
+```
+
+Since the left hand side is more valuable than the right hand side, the trader should:
+
+ - Write a call for \$14, gaining \$14 at the time
+ 
+ - Borrow \$49.99, gaining \$49.99 at the time
+ 
+ - Buy a put for \$2, losing \$2 at the time
+ 
+ - Buy a stock for \$60, losing \$60 at the time.
+
+The net cash flow is \$1.99.
+
+The stock will give a dividend of \$1 in 3 months, so they could pay some of the loan back with it. Since the trader is long put and short call they cancel out since they will exercise the put to sell the stock at \$50 if the price is below, but if the price is above \$50 the call will be exercised and the trader will still get a cash flow of \$50. If done correctly, the $1.99 is the traders to keep.
+
+\newpage
+
+## 3.2
+
+Long 1 $c_1$, Short 2 $c_2$, Long 1 $c_3$
+
+With strikes $K_1,\ K_2,\ K_3$
+
+and the distance between $K_1$ and $K_2$ is the same as $K_2$ and $K_3$.
+
+There are 4 states that the stock price can take:
+
+1. $S \in [0, K_1]$
+
+The value here is \$0, because both of the long calls are OTM and the short call does not generate any additional return.
+
+2. $S \in (K_1, K_2]$
+
+The value here is $\$S_T - K_1$ from $c_1$.
+
+3. $S \in (K_2, K_3]$
+
+The value here $\$(S_T - K_1) - 2(S_T - K_2)$ from the long $c_1$ and the two short $c_2$.
+
+4. $S \in (K_3, \infty)$
+
+The value here is $\$(S_T - K_1) - 2(S_T - K_2) + (S_T - K_3)$ from all of the calls.
+
+You can rewrite the equation as $2c_2 \leq (c_1 + c_2)$. If this does not hold up then you could create an arbitrage opportunity as there would be a positive cash flow.
+
+\newpage
+
+## 3.3
+
+You can write an American call and buy a European call. This net cash flow would be +\$2. If they expire worthless you would keep the difference. If the American call is exercised before maturity you would borrow a stock to sell and get \$60 in return. Then you would invest the money at 5%, exercise the call (-\$60) at maturity to give the stock back, and keep the difference. If it's exercised at maturity you would just exercise at the same time and still keep the difference.
+
+## 3.4
+
+The price should not differ by more than $20e^{-0.05} = 19.02$, but the difference is 19.5. You should write the put with $K=60$ and long the other. You You have \$19.50 to invest at 5%. If the shorted put is exercised then you would buy it and keep the interest.
+
+
+
+
+
+
+
