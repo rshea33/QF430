@@ -13,9 +13,21 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 # Function to price calls and puts using Black Scholes equation
-BS <- function(S, K, r, sigma, t, type="c") {
+BS <- function(S, K, r, sigma, t, type="c", show=TRUE) {
   d1 <- (log(S / K) + (r + sigma^2 / 2) * t) / (sigma * sqrt(t))
   d2 <- (log(S / K) + (r - sigma^2 / 2) * t) / (sigma * sqrt(t))
+  
+  if (show == TRUE) {
+    print("d1:")
+    print("= (log(S / K) + (r + sigma^2 / 2) * t) / (sigma * sqrt(t))")
+    cat("     = (log(", S, " / ", K, ") + (", r, " + ", sigma, "^2 / 2) * ", t, ") / (", sigma, " * sqrt(", t, "))\n", sep = '')
+    cat("     =", d1, "\n\n")
+    
+    print("d2:")
+    print("= (log(S / K) + (r - sigma^2 / 2) * t) / (sigma * sqrt(t))")
+    cat("     = (log(", S, " / ", K, ") + (", r, " - ", sigma, "^2 / 2) * ", t, " / (", sigma, " * sqrt(", t, "))\n", sep = '')
+    cat("     =", d2, "\n\n")
+  }
   
   if (type == "c" | type == "call") {
     return (
@@ -31,6 +43,9 @@ BS <- function(S, K, r, sigma, t, type="c") {
 }
 ```
 
+```{r}
+BS(100, 95, 0.05, 0.3, 1)
+```
 
 
 ```{r}
