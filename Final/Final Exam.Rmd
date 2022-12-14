@@ -1,0 +1,67 @@
+---
+title: "Final Exam"
+author: "Ryan Shea"
+date: "12/14/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Helper Functions
+
+```{r}
+# Function to price calls and puts using Black Scholes equation
+BS <- function(S, K, r, sigma, t, type="c") {
+  d1 <- (log(S / K) + (r + sigma^2 / 2) * t) / (sigma * sqrt(t))
+  d2 <- (log(S / K) + (r - sigma^2 / 2) * t) / (sigma * sqrt(t))
+  
+  if (type == "c" | type == "call") {
+    return (
+      S * pnorm(d1) - (K * exp(-r * t) * pnorm(d2))
+    )
+  }
+  
+  if (type == "p" | type == "put") {
+    return (
+      (K * exp(-r * t) * pnorm(-d2)) - S * pnorm(-d1)
+    )
+  }
+}
+```
+
+
+
+```{r}
+# Code to prove that the payoff mirrors
+
+S_t <- 0:100 # change this only if payoffs go further than 100
+
+port <- function(S) {
+  
+  put <- function(K){ return ( max(K - S, 0) ) }
+  call <- function(K){ return ( max(S - K, 0) ) }
+  
+  return ( # Change these parameters
+    
+    3/2 * put(80) +
+    - 1/2 * put(60) + 
+    -2 * put(40)
+    
+  )
+}
+portfolio <- cbind(S_t, lapply(S_t, port))
+plot(portfolio,
+     type='l',
+     col='blue',
+     xlab="Stock Price",
+     ylab="Portfolio Value",
+     ylim = c(0, 1.05 * max(unlist(lapply(S_t, port)))),
+     main="Portfolio Value Vs Stock Price"
+     )
+grid()
+```
+
+
+
