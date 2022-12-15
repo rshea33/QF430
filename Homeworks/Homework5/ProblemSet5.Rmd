@@ -103,9 +103,7 @@ port <- function(S) {
 
     3/2 * put(80) +
     - 1/2 * put(60) + 
-    -2 * put(40) +
-
-    
+    -2 * put(40)
   )
 }
 portfolio <- cbind(S_t, lapply(S_t, port))

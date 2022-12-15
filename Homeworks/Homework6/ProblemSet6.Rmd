@@ -1,0 +1,198 @@
+---
+title: "Problem Set 6"
+author: "Ryan Shea"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+I pledge my honor that I have abided by the Stevens Honor System.
+
+\newpage
+
+## 1: Black-Scholes Model and Risk-Neutral Valuation
+
+```{r}
+BS <- function(S, K, r, sigma, t, type="c", show=TRUE) {
+  d1 <- (log(S / K) + (r + sigma^2 / 2) * t) / (sigma * sqrt(t))
+  d2 <- (log(S / K) + (r - sigma^2 / 2) * t) / (sigma * sqrt(t))
+  
+  if (show == TRUE) {
+    print("d1")
+    print("= (log(S / K) + (r + sigma^2 / 2) * t) / (sigma * sqrt(t))")
+    cat("     = (log(", S, " / ", K, ") + (", r, " + ", sigma, "^2 / 2) * ", t, ") / (", sigma, " * sqrt(", t, "))\n", sep = '')
+    cat("     =", d1, "\n\n")
+    
+    print("d2")
+    print("= (log(S / K) + (r - sigma^2 / 2) * t) / (sigma * sqrt(t))")
+    cat("     = (log(", S, " / ", K, ") + (", r, " - ", sigma, "^2 / 2) * ", t, " / (", sigma, " * sqrt(", t, "))\n", sep = '')
+    cat("     =", d2, "\n\n")
+  }
+  
+  if (type == "c" | type == "call") {
+    if (show == TRUE) {
+      print("c")
+      print("= S * pnorm(d1) - (K * exp(-r * t) * pnorm(d2))")
+      cat("     = ",S, " * ", pnorm(d1)," -(", K, " * ", exp(-r * t)," * ",pnorm(d2),")", "\n", sep = '')
+
+    }
+    return (
+      S * pnorm(d1) - (K * exp(-r * t) * pnorm(d2))
+    )
+  }
+  
+  if (type == "p" | type == "put") {
+    if (show == TRUE) {
+      print("p")
+      print("= (K * exp(-r * t) * pnorm(-d2)) - S * pnorm(-d1)\n")
+      cat("     = (",K," * ", exp(-r * t)," * ", pnorm(-d2),") - ",S, " * ",pnorm(-d1), "\n", sep = '')
+    }
+    return (
+      (K * exp(-r * t) * pnorm(-d2)) - S * pnorm(-d1)
+    )
+  }
+}
+```
+
+\newpage
+
+### 1.1
+
+#### (a)
+
+$$
+f_t(t, x) = - \frac12 \sigma^2 x^2 f_{xx}(t, x) - rxf_x(t,x) - rf(t,x)
+$$
+$f_t(t, x)$ is the change of value in the derivative w.r.t. time.
+
+$\sigma$ is the volatility of the underlying asset.
+
+$x$ is the asset value.
+
+$f_{xx}(t, x)$ is the second derivative of the the derivative price w.r.t. the asset value.
+
+$r$ is the risk free rate.
+
+$f_x(t,x)$ is the change of value in the derivative w.r.t. the asset value.
+
+$f(t,x)$ is the value of the derivative when the value of the asset is x.
+
+#### (b)
+
+The derivative payoff comes from the specific boundary conditions of the PDE.
+
+### 1.2
+
+```{r}
+S <- 75
+sigma <- 0.4
+K <- 70
+t <- 0.5
+r <- 0.05
+```
+
+
+#### (a)
+
+```{r}
+BS(S, K, r, sigma, t, type="call")
+```
+
+
+#### (b)
+
+```{r}
+BS(S, K, r, sigma, t, type="put")
+```
+
+
+#### (c)
+
+The price of the American call will be the same price as the European call as it is not paying dividends. It is \$11.85799 $\approx$ \$11.86.
+
+#### (d)
+
+```{r}
+c <- BS(S, K, r, sigma, t, type="call", show = FALSE)
+price_at_expiry <- max(90 - K, 0)
+
+(price_at_expiry - c) / c
+```
+
+The profit you can make by investing in call options is 68.66\%.
+
+\newpage
+
+### 1.3
+
+#### (a)
+
+
+Because $\sigma$ is squared in the numerator and not in the denominator, as the $d1$ will approach infinity as well.
+
+The cdf of infinity will equal 1.
+
+
+In $d2$, since you are now subtracting the $\frac{\sigma^2}{2}$ term (in the numerator) while the denominator is still just $\sigma$, it will approach negative infinity.
+
+The cdf of negative infinity will equal 0.
+
+#### (b)
+
+
+The call price will approach the stock price $S$ since it is $S$ times the cdf of infinity minus some terms times the cdf of negative infinity.
+
+#### (c)
+
+
+The put price will approach $Ke^{rt}$ since its the cdf of negative $d2$ (1) minus some terms times the cdf of negative $d1$ (0).
+
+### 1.4
+
+
+### 1.5
+
+
+## 2: Option Risk Measures
+
+### 2.1
+
+```{r}
+S <- 40
+sigma <- 0.5
+K <- 52
+t <- 1
+r <- 0.02
+```
+
+#### (a)
+
+```{r}
+delta <- pnorm(
+  (log(S/K) + ((r + (sigma^2 / 2)) * t)) / 
+    (sigma * sqrt(t))
+  ) - 1
+delta
+```
+
+You should buy 0.5927 shares of stock to offset the one put.
+
+#### (b)
+
+If the value increases from 40 to 50, the put option would decrease less than the increase of the stock as the put option is convex. This increases portfolio value (assuming the increase does not end at expiry).
+
+#### (c)
+
+if the value decreased from 40 to 30, the put option would increase more than the decrease of stock for the same reason. This will also increase in value (assuming the increase does not end at expiry).
+
+
+## 2.2
+
+
+## 3: Credit Derivatives
+
+### 3.1
+
+### 3.2
